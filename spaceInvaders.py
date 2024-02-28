@@ -65,6 +65,10 @@ class Spaceship(pygame.sprite.Sprite):
         if key[pygame.K_DOWN] and self.rect.bottom < screen_height:
             self.rect.y += speed
 
+        # if key[pygame.K_ESCAPE]:
+        #     run = False
+        #     pygame.quit()
+
         # record current time
         time_now = pygame.time.get_ticks()
 
@@ -86,6 +90,7 @@ bullet_img = pygame.image.load('green_bullet.png')
 bullet_img = pygame.transform.scale(bullet_img, (bullet_size, bullet_size))
 
 
+
 # bullet class
 class Bullets(pygame.sprite.Sprite):
     def __init__(self, x, y):
@@ -100,15 +105,39 @@ class Bullets(pygame.sprite.Sprite):
             self.kill()
 
 
+# change powerup size
+powerup_size = 20
+powerup_img = pygame.image.load('powerup.png')
+powerup_img = pygame.transform.scale(powerup_img, (powerup_size, powerup_size))
+
+# poweruo  class
+class Powerup(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = powerup_img
+        self.rect = self.image.get_rect()
+        self.rect.center = [x, y]
+
+    def update(self):
+        self.rect.y += 2
+        if self.rect.bottom > screen_height - 100:
+            self.kill()
+
+
+
 
 # create sprite group
 spaceship_group = pygame.sprite.Group()
 bullet_group = pygame.sprite.Group()
+powerup_group = pygame.sprite.Group()
 
 # create player
 ship_health = 3
 spaceship = Spaceship(int(screen_width / 2), screen_height - 100, ship_health)
 spaceship_group.add(spaceship)
+
+powerup = Powerup(200,10)
+bullet_group.add(powerup)
 
 
 
@@ -119,6 +148,12 @@ while run:
     clock.tick(fps)
     # draw background
     draw_bg()
+
+    # end game with esc button
+    key = pygame.key.get_pressed()
+    if key[pygame.K_ESCAPE]:
+         run = False
+
     # event handlers
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -129,11 +164,13 @@ while run:
 
     # update sprite groups
     bullet_group.update()
+    powerup_group.update()
 
 
     #draw sprite groups
     spaceship_group.draw(screen)
     bullet_group.draw(screen)
+    powerup_group.draw(screen)
 
     pygame.display.update()
 
