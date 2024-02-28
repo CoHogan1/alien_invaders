@@ -46,13 +46,10 @@ class Spaceship(pygame.sprite.Sprite):
         self.rect.center = [x, y]
         self.health_start = health
         self.health_remaining = health
-        self.last_shot = pygame.time.get_ticks()
 
     def update(self):
         #set movement speed
         speed = 8
-        # set cooldown variable in miliseconds
-        cooldown = 400
 
         #get any key press
         key = pygame.key.get_pressed()
@@ -65,45 +62,16 @@ class Spaceship(pygame.sprite.Sprite):
         if key[pygame.K_DOWN] and self.rect.bottom < screen_height:
             self.rect.y += speed
 
-        # record current time
-        time_now = pygame.time.get_ticks()
-
-        # shooting bullets
-        if key[pygame.K_SPACE] and time_now - self.last_shot > cooldown:
-            bullet = Bullets(self.rect.centerx, self.rect.top)
-            bullet_group.add(bullet)
-            self.last_shot = time_now
-
-
         # draw helath bar
         pygame.draw.rect(screen, red, (self.rect.x, (self.rect.bottom + 10), self.rect.width,  10))
         if self.health_remaining > 0:
             pygame.draw.rect(screen, blue, (self.rect.x, (self.rect.bottom + 10), int(self.rect.width *(self.health_remaining / self.health_start)),  10))
 
 
-bullet_size = 10
-bullet_img = pygame.image.load('green_bullet.png')
-bullet_img = pygame.transform.scale(bullet_img, (bullet_size, bullet_size))
-
-
-# bullet class
-class Bullets(pygame.sprite.Sprite):
-    def __init__(self, x, y):
-        pygame.sprite.Sprite.__init__(self)
-        self.image = bullet_img
-        self.rect = self.image.get_rect()
-        self.rect.center = [x, y]
-
-    def update(self):
-        self.rect.y -= 5
-        if self.rect.bottom < 0:
-            self.kill()
-
 
 
 # create sprite group
 spaceship_group = pygame.sprite.Group()
-bullet_group = pygame.sprite.Group()
 
 # create player
 ship_health = 3
@@ -127,15 +95,13 @@ while run:
     # update spaceship
     spaceship.update()
 
-    # update sprite groups
-    bullet_group.update()
-
 
     #draw sprite groups
     spaceship_group.draw(screen)
-    bullet_group.draw(screen)
+
 
     pygame.display.update()
+
 
 # ensure pygame closes.
 pygame.quit()
