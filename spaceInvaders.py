@@ -21,9 +21,15 @@ screen = pygame.display.set_mode((screen_width, screen_height))
 # window title
 pygame.display.set_caption('Test Space invaders')
 
+#define game variables
+rows = 5
+cols = 5
+
 # define colors for health bar
 red = (255, 0, 0)
 blue = (0, 0, 255)
+alien_cooldown = 1000 # bullet cooldown in ms
+last_alien_shot = pygame.time.get_ticks()
 
 #background image load
 bg = pygame.image.load('star.png')
@@ -105,6 +111,53 @@ class Bullets(pygame.sprite.Sprite):
             self.kill()
 
 
+
+alien_size = 20
+alien1_img = pygame.image.load('alien.png')
+alien1_img = pygame.transform.scale(alien1_img, (alien_size, alien_size))
+
+alien2_img = pygame.image.load('alien2.png')
+alien2_img = pygame.transform.scale(alien2_img, (alien_size, alien_size))
+
+aliens = [alien1_img, alien2_img]
+
+# Alien class
+class Aliens(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = aliens[random.randint(0,1)]
+        self.rect = self.image.get_rect()
+        self.rect.center = [x, y]
+        self.move_counter = 0
+        self.move_direction = 1
+
+    def update(self):
+        self.rect.x += self.move_direction
+        self.move_counter += 1
+        if abs(self.move_counter) > 75:
+            self.move_direction *= -1
+            self.move_counter *= self.move_direction
+
+
+alien_bullet_size = 20
+alien_bullet_img = pygame.image.load('alien_bullet.png')
+alien_bullet_img = pygame.transform.scale(alien_bullet_img, (alien_bullet_size + 50, alien_bullet_size))
+
+# bullet class
+class Alien_Bullets(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = alien_bullet_img
+        self.rect = self.image.get_rect()
+        self.rect.center = [x, y]
+
+    def update(self):
+        self.rect.y += 2
+        if self.rect.top > screen_height:
+            self.kill()
+
+
+
 # change powerup size
 powerup_size = 20
 powerup_img = pygame.image.load('powerup.png')
@@ -129,7 +182,23 @@ class Powerup(pygame.sprite.Sprite):
 # create sprite group
 spaceship_group = pygame.sprite.Group()
 bullet_group = pygame.sprite.Group()
+alien_group = pygame.sprite.Group()
+alien_bullet_group = pygame.sprite.Group()
+
 powerup_group = pygame.sprite.Group()
+
+def create_aliens():
+    # generate aliens
+    for row in range(rows):
+        for item in range(cols):
+            alien = Aliens(100 + item * 100, 100 + row * 70)
+            alien_group.add(alien)
+
+# create aliens
+create_aliens()
+
+
+
 
 # create player
 ship_health = 3
@@ -149,6 +218,20 @@ while run:
     # draw background
     draw_bg()
 
+    # pick an alien to fire a bullet
+    # record current time
+    time_now = pygame.time.get_ticks()
+    # shooting
+    if time_now - last_alien_shot > alien_cooldown and len(alien_bullet_group) < 8 and len(alien_group) > 0:
+        attacking_alien = random.choice(alien_group.sprites())
+        alien_bullet = Alien_Bullets(attacking_alien.rect.centerx, attacking_alien.rect.bottom)
+        alien_bullet_group.add(alien_bullet)
+        last_alien_shot = time_now
+
+
+
+
+
     # end game with esc button
     key = pygame.key.get_pressed()
     if key[pygame.K_ESCAPE]:
@@ -165,12 +248,16 @@ while run:
     # update sprite groups
     bullet_group.update()
     powerup_group.update()
+    alien_group.update()
+    alien_bullet_group.update()
 
 
     #draw sprite groups
     spaceship_group.draw(screen)
     bullet_group.draw(screen)
+    alien_group.draw(screen)
     powerup_group.draw(screen)
+    alien_bullet_group.draw(screen)
 
     pygame.display.update()
 
