@@ -70,11 +70,6 @@ class Spaceship(pygame.sprite.Sprite):
             self.rect.y -= speed
         if key[pygame.K_DOWN] and self.rect.bottom < screen_height:
             self.rect.y += speed
-
-        # if key[pygame.K_ESCAPE]:
-        #     run = False
-        #     pygame.quit()
-
         # record current time
         time_now = pygame.time.get_ticks()
 
@@ -84,6 +79,8 @@ class Spaceship(pygame.sprite.Sprite):
             bullet_group.add(bullet)
             self.last_shot = time_now
 
+        # create a mask
+        self.mask = pygame.mask.from_surface(self.image)
 
         # draw helath bar
         pygame.draw.rect(screen, red, (self.rect.x, (self.rect.bottom + 10), self.rect.width,  10))
@@ -113,7 +110,9 @@ class Bullets(pygame.sprite.Sprite):
             # first arg is sprite to check on, second arg is sprite to watch for, 3rd arg is aotu kill option
         if pygame.sprite.spritecollide(self, alien_group, True):
             self.kill()
-
+            explosion = Explosion(self.rect.centerx, self.rect.centery, 2)
+            print(explosion)
+            explosion_group.add(explosion)
 
 
 alien_size = 20
@@ -159,10 +158,12 @@ class Alien_Bullets(pygame.sprite.Sprite):
         self.rect.y += 2
         if self.rect.top > screen_height:
             self.kill()
-        if pygame.sprite.spritecollide(self, spaceship_group, False):
+        if pygame.sprite.spritecollide(self, spaceship_group, False, pygame.sprite.collide_mask):
             self.kill()
             #reduce spaceship health.
             spaceship.health_remaining -= 1
+            explosion = Explosion(self.rect.centerx, self.rect.centery, 2)
+            explosion_group.add(explosion)
 
 
 
@@ -190,6 +191,44 @@ class Powerup(pygame.sprite.Sprite):
             self.kill( )
 
 
+# create explosion class
+class Explosion(pygame.sprite.Sprite):
+	def __init__(self, x, y, size):
+		pygame.sprite.Sprite.__init__(self)
+		self.images = []
+		for num in range(1, 4):
+			img = pygame.image.load(f"exp{num}.jpeg")
+			if size == 1:
+				img = pygame.transform.scale(img, (20, 20))
+			if size == 2:
+				img = pygame.transform.scale(img, (40, 40))
+			if size == 3:
+				img = pygame.transform.scale(img, (160, 160))
+			#add the image to the list
+			self.images.append(img)
+		self.index = 0
+		self.image = self.images[self.index]
+		self.rect = self.image.get_rect()
+		self.rect.center = [x, y]
+		self.counter = 0
+
+
+	def update(self):
+		explosion_speed = 3
+		#update explosion animation
+		self.counter += 1
+
+		if self.counter >= explosion_speed and self.index < len(self.images) - 1:
+			self.counter = 0
+			self.index += 1
+			self.image = self.images[self.index]
+
+		#if the animation is complete, delete explosion
+		if self.index >= len(self.images) - 1 and self.counter >= explosion_speed:
+			self.kill()
+
+
+
 
 
 # create sprite group
@@ -197,6 +236,7 @@ spaceship_group = pygame.sprite.Group()
 bullet_group = pygame.sprite.Group()
 alien_group = pygame.sprite.Group()
 alien_bullet_group = pygame.sprite.Group()
+explosion_group = pygame.sprite.Group()
 
 powerup_group = pygame.sprite.Group()
 
@@ -210,6 +250,9 @@ def create_aliens():
 # create aliens
 create_aliens()
 
+def rand():
+    return random.randint(10, screen_width)
+
 
 
 
@@ -220,7 +263,6 @@ spaceship_group.add(spaceship)
 
 powerup = Powerup(200,10)
 powerup_group.add(powerup)
-
 
 
 #game loop
@@ -241,14 +283,9 @@ while run:
         alien_bullet_group.add(alien_bullet)
         last_alien_shot = time_now
 
-    if time_now % 100 == 0:
-        print("adding sprite to draw")
-        powerup = Powerup(200,10)
+    if time_now % 70 == 0:
+        powerup = Powerup(rand(), -10)
         powerup_group.add(powerup)
-
-
-
-
 
 
     # end game with esc button
@@ -269,6 +306,7 @@ while run:
     powerup_group.update()
     alien_group.update()
     alien_bullet_group.update()
+    explosion_group.update()
 
 
     #draw sprite groups
@@ -277,6 +315,7 @@ while run:
     alien_group.draw(screen)
     powerup_group.draw(screen)
     alien_bullet_group.draw(screen)
+    explosion_group.draw(screen)
 
     pygame.display.update()
 
