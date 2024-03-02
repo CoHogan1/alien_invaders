@@ -109,6 +109,10 @@ class Bullets(pygame.sprite.Sprite):
         self.rect.y -= 5
         if self.rect.bottom < 0:
             self.kill()
+            # check for collision
+            # first arg is sprite to check on, second arg is sprite to watch for, 3rd arg is aotu kill option
+        if pygame.sprite.spritecollide(self, alien_group, True):
+            self.kill()
 
 
 
@@ -155,6 +159,10 @@ class Alien_Bullets(pygame.sprite.Sprite):
         self.rect.y += 2
         if self.rect.top > screen_height:
             self.kill()
+        if pygame.sprite.spritecollide(self, spaceship_group, False):
+            self.kill()
+            #reduce spaceship health.
+            spaceship.health_remaining -= 1
 
 
 
@@ -175,6 +183,11 @@ class Powerup(pygame.sprite.Sprite):
         self.rect.y += 2
         if self.rect.bottom > screen_height - 100:
             self.kill()
+            self.rect.y = -10
+        if pygame.sprite.spritecollide(self, spaceship_group, False):
+            if spaceship.health_remaining < 3:
+                spaceship.health_remaining += 1
+            self.kill( )
 
 
 
@@ -206,7 +219,7 @@ spaceship = Spaceship(int(screen_width / 2), screen_height - 100, ship_health)
 spaceship_group.add(spaceship)
 
 powerup = Powerup(200,10)
-bullet_group.add(powerup)
+powerup_group.add(powerup)
 
 
 
@@ -227,6 +240,12 @@ while run:
         alien_bullet = Alien_Bullets(attacking_alien.rect.centerx, attacking_alien.rect.bottom)
         alien_bullet_group.add(alien_bullet)
         last_alien_shot = time_now
+
+    if time_now % 100 == 0:
+        print("adding sprite to draw")
+        powerup = Powerup(200,10)
+        powerup_group.add(powerup)
+
 
 
 
@@ -260,6 +279,8 @@ while run:
     alien_bullet_group.draw(screen)
 
     pygame.display.update()
+
+
 
 # ensure pygame closes.
 pygame.quit()
