@@ -1,16 +1,10 @@
 import pygame
-import tracemalloc as TM
+#import tracemalloc as TM
 from pygame import mixer
 from pygame.locals import*
 import random
 
 pygame.init()
-
-# start tracing memory usage
-TM.start()
-
-
-
 
 pygame.mixer.pre_init(44100, -16, 2, 512)
 mixer.init()
@@ -24,17 +18,31 @@ fps = 60
 # set up window
 screen_width = 600
 screen_height = 800
-screen = pygame.display.set_mode((screen_width, screen_height))
 
+
+#starting bullet count
 bullet_count = 1
+
+#define game variables
+rows = 5
+cols = 5
+
+# define colors for health bar
+red = (255, 0, 0)
+blue = (0, 0, 255)
+white = (255, 255, 255)
+
+alien_cooldown = 1000 # bullet cooldown in ms
+
+
+screen = pygame.display.set_mode((screen_width, screen_height))
 
 # define fonts
 font30 = pygame.font.SysFont('Constantia', 30)
 font40 = pygame.font.SysFont('Constantia', 40)
 
-
 # window title
-pygame.display.set_caption('Test Space invaders')
+pygame.display.set_caption('Space invaders')
 
 # load sounds
 explosion_fx = pygame.mixer.Sound("invaderkilled.wav")
@@ -46,17 +54,6 @@ shoot_fx.set_volume(0.25)
 alien_exp_fx = pygame.mixer.Sound('invaderkilled.wav')
 alien_exp_fx.set_volume(0.25)
 
-#define game variables
-rows = 5
-cols = 5
-
-# define colors for health bar
-red = (255, 0, 0)
-blue = (0, 0, 255)
-white = (255, 255, 255)
-
-
-alien_cooldown = 1000 # bullet cooldown in ms
 last_alien_shot = pygame.time.get_ticks()
 
 # start window
@@ -101,7 +98,6 @@ class Spaceship(pygame.sprite.Sprite):
         cooldown = 400
         game_over = 0
 
-
         #get any key press
         key = pygame.key.get_pressed()
         if key[pygame.K_LEFT] and self.rect.left > 0:
@@ -144,8 +140,6 @@ class Spaceship(pygame.sprite.Sprite):
 bullet_size = 10
 bullet_img = pygame.image.load('green_bullet.png')
 bullet_img = pygame.transform.scale(bullet_img, (bullet_size, bullet_size))
-
-
 
 # bullet class
 class Bullets(pygame.sprite.Sprite):
@@ -219,8 +213,6 @@ class Alien_Bullets(pygame.sprite.Sprite):
             explosion = Explosion(self.rect.centerx, self.rect.centery, 2)
             explosion_group.add(explosion)
 
-
-
 # change powerup size
 powerup_size = 20
 powerup_img = pygame.image.load('powerup.png')
@@ -267,7 +259,6 @@ class Explosion(pygame.sprite.Sprite):
 		self.rect = self.image.get_rect()
 		self.rect.center = [x, y]
 		self.counter = 0
-
 
 	def update(self):
 		explosion_speed = 3
@@ -321,6 +312,17 @@ powerup = Powerup(200,10)
 powerup_group.add(powerup)
 
 
+def clear_sprites():
+    for w in alien_bullet_group:
+        w.kill()
+    for x in alien_group:
+        x.kill()
+    for y in bullet_group:
+        y.kill()
+    for z in powerup_group:
+        z.kill()
+
+
 #game loop
 run = True
 while run:
@@ -361,12 +363,15 @@ while run:
         else:
             if game_over == -1:
                     draw_text('Game Over! :(', font40, white, int(screen_width)/ 2 - 110, int(screen_height) / 2 + 50)
+                    draw_text('Press any key', font40, white, int(screen_width)/ 2 - 110, int(screen_height) - 100)
+                    draw_text('to play again', font40, white, int(screen_width)/ 2 - 110, int(screen_height) - 50)
                     # press s to start game again
 
             if game_over == 1:
-                    draw_text('You Win! :)', font40, white, int(screen_width)/ 2 - 110, int(screen_height) / 2 + 50)
+                    draw_text('You Win! :)', font40, white, int(screen_width)/ 2 - 110, int(screen_height) / + 50)
+                    draw_text('Press any key', font40, white, int(screen_width)/ 2 - 110, int(screen_height) - 100)
+                    draw_text('to play again', font40, white, int(screen_width)/ 2 - 110, int(screen_height) - 50)
                     # press s to start game again
-
 
     if countdown > 0:
         draw_text('Get Ready', font40, white, int(screen_width)/ 2 - 110, int(screen_height) / 2 + 50)
@@ -392,9 +397,14 @@ while run:
     for event in pygame.event.get():
         if event.type == pygame.QUIT or key[pygame.K_ESCAPE]:
             run = False
-        # if event.type == pygame.KEYDOWN and game_over != 0:
-        #     game_over = 0
-        #     countdown = 3
+        elif event.type == pygame.KEYDOWN and game_over != 0:
+            clear_sprites()
+            create_aliens()
+            spaceship.health_remaining = 3
+            game_over = 0
+            countdown = 3
+            spaceship.kill()
+            spaceship_group.add(spaceship)
 
     pygame.display.update()
 
@@ -402,10 +412,3 @@ while run:
 # ensure pygame closes.
 pygame.quit()
 print("end game")
-
-# displaying the memory
-print(TM.get_traced_memory())
-
-
-# stopping the library
-TM.stop()
