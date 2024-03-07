@@ -24,8 +24,8 @@ screen_height = 800
 bullet_count = 1
 
 #define game variables
-rows = 5
-cols = 5
+rows = int(screen_width / 101)
+cols = int(screen_height / 200 + 1)
 
 # define colors for health bar
 red = (255, 0, 0)
@@ -183,13 +183,13 @@ class Aliens(pygame.sprite.Sprite):
 
     def update(self):
         self.rect.x += self.move_direction
-        self.move_counter += 1
+        self.move_counter += 1 * lvl
         if abs(self.move_counter) > 75:
             self.move_direction *= -1
             self.move_counter *= self.move_direction
 
 
-alien_bullet_size = 20
+alien_bullet_size = 30
 alien_bullet_img = pygame.image.load('alien_bullet.png')
 alien_bullet_img = pygame.transform.scale(alien_bullet_img, (alien_bullet_size + 50, alien_bullet_size))
 
@@ -202,7 +202,7 @@ class Alien_Bullets(pygame.sprite.Sprite):
         self.rect.center = [x, y]
 
     def update(self):
-        self.rect.y += 2
+        self.rect.y += lvl + 1
         if self.rect.top > screen_height:
             self.kill()
         if pygame.sprite.spritecollide(self, spaceship_group, False, pygame.sprite.collide_mask):
@@ -304,7 +304,7 @@ def rand():
 
 
 # create player
-ship_health = 3
+ship_health = 5
 spaceship = Spaceship(int(screen_width / 2), screen_height - 100, ship_health)
 spaceship_group.add(spaceship)
 
@@ -323,13 +323,31 @@ def clear_sprites():
         z.kill()
 
 
-#game loop
+def update_score(num):
+    score = str(num)
+    first = 8 - len(score)
+    return '0' * first + score
+
+def update_lvl(num):
+    if num == 99:
+        return str(99)
+    if num <= 9:
+        return f'0{num}'
+    return str(num)
+
+
+# **********************************************************************game loop
+score = 0
+lvl = 1
 run = True
 while run:
     # set tick spped to frams per second
     clock.tick(fps)
     # draw background
     draw_bg()
+
+    draw_text(f'{update_score(score)}', font40, white, screen_width - 170, 15)
+    draw_text(f'{update_lvl(lvl)}', font40, white, 20, 15)
 
     if countdown == 0:
         # pick an alien to fire a bullet
@@ -354,11 +372,14 @@ while run:
         if game_over == 0:
             # update spaceship
             game_over = spaceship.update()
+            len_alien_group = len(alien_group)
 
             # update sprite groups
             bullet_group.update()
             powerup_group.update()
             alien_group.update()
+            if len_alien_group > len(alien_group):
+                score += 3
             alien_bullet_group.update()
         else:
             if game_over == -1:
@@ -398,6 +419,7 @@ while run:
         if event.type == pygame.QUIT or key[pygame.K_ESCAPE]:
             run = False
         elif event.type == pygame.KEYDOWN and game_over != 0:
+            lvl +=1
             clear_sprites()
             create_aliens()
             spaceship.health_remaining = 3
