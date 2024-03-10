@@ -16,8 +16,8 @@ clock = pygame.time.Clock()
 fps = 60
 
 # set up window
-screen_width = 600
-screen_height = 800
+screen_width = 1200
+screen_height = 1200
 
 
 #starting bullet count
@@ -74,8 +74,8 @@ def draw_text(text, font, text_col, x, y):
     img = font.render(text, True, text_col)
     screen.blit(img, (x,y))
 
-ship_size = 45
-ship_img = pygame.image.load('ship2.png')
+ship_size = screen_width * 0.05
+ship_img = pygame.image.load('isaac_ship.png')
 ship_img = pygame.transform.scale(ship_img, (ship_size, ship_size))
 
 
@@ -89,34 +89,36 @@ class Spaceship(pygame.sprite.Sprite):
         self.health_start = health
         self.health_remaining = health
         self.last_shot = pygame.time.get_ticks()
-        self.bullet_count = bullet_count
+        self.bullet_count = 1 #bullet_count
+        self.cooldown = 400
+        self.speed = 8
 
     def update(self):
         #set movement speed
         speed = 8
         # set cooldown variable in miliseconds
-        cooldown = 400
+        #cooldown = 400
         game_over = 0
 
         #get any key press
         key = pygame.key.get_pressed()
         if key[pygame.K_LEFT] and self.rect.left > 0:
-            self.rect.x -= speed
+            self.rect.x -= self.speed
         if key[pygame.K_RIGHT] and self.rect.right < screen_width:
-            self.rect.x += speed
+            self.rect.x += self.speed
         if key[pygame.K_UP] and self.rect.top > 0:
-            self.rect.y -= speed
+            self.rect.y -= self.speed
         if key[pygame.K_DOWN] and self.rect.bottom < screen_height:
-            self.rect.y += speed
+            self.rect.y += self.speed
         # record current time
         time_now = pygame.time.get_ticks()
 
         # shooting bullets
-        if key[pygame.K_SPACE] and time_now - self.last_shot > cooldown:
+        if key[pygame.K_SPACE] and time_now - self.last_shot > self.cooldown:
             shoot_fx.play()
             # shot miltiple bullets
             for x in range(self.bullet_count):
-                bullet = Bullets(self.rect.centerx + x * 20, self.rect.top)
+                bullet = Bullets(self.rect.left + int(ship_size / self.bullet_count + 1) * x + 20 * x, self.rect.top)
                 bullet_group.add(bullet)
             self.last_shot = time_now
 
@@ -137,7 +139,7 @@ class Spaceship(pygame.sprite.Sprite):
 
 
 
-bullet_size = 10
+bullet_size = screen_width * 0.015
 bullet_img = pygame.image.load('green_bullet.png')
 bullet_img = pygame.transform.scale(bullet_img, (bullet_size, bullet_size))
 
@@ -162,20 +164,24 @@ class Bullets(pygame.sprite.Sprite):
             explosion_group.add(explosion)
 
 
-alien_size = 20
-alien1_img = pygame.image.load('alien.png')
+alien_size = screen_width * 0.04
+alien1_img = pygame.image.load('isaac_alien1.png')
 alien1_img = pygame.transform.scale(alien1_img, (alien_size, alien_size))
 
-alien2_img = pygame.image.load('alien2.png')
+alien2_img = pygame.image.load('green_alien.png')
 alien2_img = pygame.transform.scale(alien2_img, (alien_size, alien_size))
 
-aliens = [alien1_img, alien2_img]
+alien3_img = pygame.image.load('white_alien.png')
+alien3_img = pygame.transform.scale(alien3_img, (alien_size, alien_size))
+
+aliens = [alien1_img, alien2_img, alien3_img]
+length = len(aliens)
 
 # Alien class
 class Aliens(pygame.sprite.Sprite):
     def __init__(self, x, y):
         pygame.sprite.Sprite.__init__(self)
-        self.image = aliens[random.randint(0,1)]
+        self.image = aliens[random.randint(0, 2)]
         self.rect = self.image.get_rect()
         self.rect.center = [x, y]
         self.move_counter = 0
@@ -183,15 +189,17 @@ class Aliens(pygame.sprite.Sprite):
 
     def update(self):
         self.rect.x += self.move_direction
-        self.move_counter += 1 * lvl
+        self.move_counter += 2
         if abs(self.move_counter) > 75:
             self.move_direction *= -1
             self.move_counter *= self.move_direction
 
 
-alien_bullet_size = 30
+alien_bullet_size = 40
 alien_bullet_img = pygame.image.load('alien_bullet.png')
 alien_bullet_img = pygame.transform.scale(alien_bullet_img, (alien_bullet_size + 50, alien_bullet_size))
+alien_bullet_img = pygame.transform.flip(alien_bullet_img, False, True)
+
 
 # bullet class
 class Alien_Bullets(pygame.sprite.Sprite):
@@ -232,10 +240,14 @@ class Powerup(pygame.sprite.Sprite):
             self.kill()
             self.rect.y = -10
         if pygame.sprite.spritecollide(self, spaceship_group, False):
-            if spaceship.bullet_count < 5:
+            if spaceship.bullet_count < 3:
                 spaceship.bullet_count += 1
-            if spaceship.health_remaining < 3:
+            if spaceship.health_remaining < 5:
                 spaceship.health_remaining += 1
+            if spaceship.cooldown < 10:
+                spaceship.cooldown -= 10
+            if spaceship.speed < 15:
+                spaceship.speed += 1
             self.kill( )
 
 
@@ -290,8 +302,8 @@ powerup_group = pygame.sprite.Group()
 def create_aliens():
     # generate aliens
     for row in range(rows):
-        for item in range(cols):
-            alien = Aliens(100 + item * 100, 100 + row * 70)
+        for col in range(cols):
+            alien = Aliens(100 + row * 100, 100 + col * 50)
             alien_group.add(alien)
 
 # create aliens
@@ -422,7 +434,7 @@ while run:
             lvl +=1
             clear_sprites()
             create_aliens()
-            spaceship.health_remaining = 3
+            spaceship.health_remaining = 5
             game_over = 0
             countdown = 3
             spaceship.kill()
